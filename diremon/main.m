@@ -6,11 +6,99 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <CoreServices/CoreServices.h>
+#import <os/log.h>
+#import <signal.h>
 
-int main(int argc, const char * argv[]) {
-    @autoreleasepool {
-        // insert code here...
-        NSLog(@"Hello, World!");
+
+static os_log_t DiremonLog;
+
+
+void fsEventsCallback(ConstFSEventStreamRef streamRef,
+                      void *clientCallBackInfo,
+                      size_t numEvents,
+                      void *eventPaths,
+                      const FSEventStreamEventFlags *eventFlags,
+                      const FSEventStreamEventId *eventIds)
+{
+    os_log_debug(DiremonLog, "start processing new event");
+    
+    os_log_info(DiremonLog, "reporting %zu events", numEvents);
+    CFArrayRef cfEventPaths = (CFArrayRef)eventPaths;
+    for (size_t i = 0; i < numEvents; i++) {
+        CFStringRef path = CFArrayGetValueAtIndex(cfEventPaths, i);
+        os_log_info(DiremonLog, "path: %{public}@", path);
     }
-    return 0;
+    
+    os_log_debug(DiremonLog, "end processing new event");
+}
+
+int main(int argc, const char * argv[])
+{
+    int exitStatus = EXIT_SUCCESS;
+
+    DiremonLog = os_log_create("com.cpu.diremon", "monitor");
+    @autoreleasepool {
+        if (argc != 2) {
+            os_log_error(DiremonLog, "%{public}s <path to monitor>", argv[0]);
+            
+            return EXIT_FAILURE;
+        }
+
+        signal(SIGTERM, SIG_IGN);
+        signal(SIGINT, SIG_IGN);
+        dispatch_source_t sigTermSrc = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL,
+                                                              SIGTERM,
+                                                              0,
+                                                              dispatch_get_main_queue());
+        dispatch_source_set_event_handler(sigTermSrc, ^{
+            CFRunLoopStop(CFRunLoopGetMain());
+        });
+        dispatch_source_t sigIntSrc = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL,
+                                                             SIGINT,
+                                                             0,
+                                                             dispatch_get_main_queue());
+        dispatch_source_set_event_handler(sigIntSrc, ^{
+            CFRunLoopStop(CFRunLoopGetMain());
+        });
+        dispatch_resume(sigTermSrc);
+        dispatch_resume(sigIntSrc);
+        
+        CFStringRef pathToMonitor = CFStringCreateWithCString(NULL, argv[1], kCFStringEncodingASCII);
+        os_log_info(DiremonLog, "directory to monitor: %{public}@", pathToMonitor);
+        CFArrayRef pathsToMonitor = CFArrayCreate(NULL, (const void **)&pathToMonitor, 1, &kCFTypeArrayCallBacks);
+        void *callbackInfo = NULL;
+        CFAbsoluteTime latency = 3.0; // seconds
+        
+        FSEventStreamRef fsEventStream = FSEventStreamCreate(NULL,
+                                                             &fsEventsCallback,
+                                                             callbackInfo,
+                                                             pathsToMonitor,
+                                                             kFSEventStreamEventIdSinceNow,
+                                                             latency,
+                                                             kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagFileEvents \
+                                                             | kFSEventStreamCreateFlagUseCFTypes);
+        
+        dispatch_queue_t dispatchQueue = dispatch_queue_create("com.cpu.diremon.queue", NULL);
+        FSEventStreamSetDispatchQueue(fsEventStream, dispatchQueue);
+        os_log_info(DiremonLog, "event stream and dispatch queue are ready, starting the stream");
+        Boolean didEventStreamStart = FSEventStreamStart(fsEventStream);
+        if (!didEventStreamStart) {
+            os_log_error(DiremonLog, "failed to start the stream");
+            
+            exitStatus = EXIT_FAILURE;
+            goto cleanup;
+        }
+        
+        os_log_info(DiremonLog, "entering run loop");
+        CFRunLoopRun();
+        os_log_info(DiremonLog, "exited run loop, cleanup\n");
+        FSEventStreamStop(fsEventStream);
+        FSEventStreamInvalidate(fsEventStream);
+    cleanup:
+        FSEventStreamRelease(fsEventStream);
+        CFRelease(pathsToMonitor);
+    }
+    
+    return exitStatus;
 }

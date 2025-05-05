@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B3D3235D2DC682B40032A83C /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B3D3235C2DC682B40032A83C /* CoreServices.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		B3D3234F2DC681670032A83C /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -20,6 +24,8 @@
 
 /* Begin PBXFileReference section */
 		B3D323512DC681670032A83C /* diremon */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = diremon; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3D3235C2DC682B40032A83C /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
+		B3D323622DC966600032A83C /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -35,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B3D3235D2DC682B40032A83C /* CoreServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,7 +51,9 @@
 		B3D323482DC681670032A83C = {
 			isa = PBXGroup;
 			children = (
+				B3D323622DC966600032A83C /* .gitignore */,
 				B3D323532DC681670032A83C /* diremon */,
+				B3D3235B2DC682B40032A83C /* Frameworks */,
 				B3D323522DC681670032A83C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -55,6 +64,14 @@
 				B3D323512DC681670032A83C /* diremon */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B3D3235B2DC682B40032A83C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B3D3235C2DC682B40032A83C /* CoreServices.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -93,6 +110,7 @@
 				TargetAttributes = {
 					B3D323502DC681670032A83C = {
 						CreatedOnToolsVersion = 16.3;
+						LastSwiftMigration = 1630;
 					};
 				};
 			};
@@ -246,20 +264,25 @@
 		B3D323592DC681670032A83C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2SZU8BF75Y;
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		B3D3235A2DC681670032A83C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2SZU8BF75Y;
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
