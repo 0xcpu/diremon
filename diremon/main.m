@@ -93,6 +93,8 @@ int main(int argc, const char * argv[])
         os_log_info(DiremonLog, "entering run loop");
         CFRunLoopRun();
         os_log_info(DiremonLog, "exited run loop, cleanup\n");
+        os_log_debug(DiremonLog, "flushing the stream");
+        FSEventStreamFlushSync(fsEventStream);
         FSEventStreamStop(fsEventStream);
         FSEventStreamInvalidate(fsEventStream);
     cleanup:
