@@ -33,6 +33,71 @@ void fsEventsCallback(ConstFSEventStreamRef streamRef,
     os_log_debug(DiremonLog, "end processing new event");
 }
 
+// load latest event ID that was process or fallback to kFSEventStreamEventIdSinceNow
+FSEventStreamEventId prefLoadDiremonState(void)
+{
+    os_log_debug(DiremonLog, "loading state");
+
+    CFStringRef appID      = CFSTR("com.cpu.diremon");
+    CFNumberRef eventIDNum = CFPreferencesCopyValue(CFSTR("LastEventID"),
+                                                    appID,
+                                                    kCFPreferencesCurrentUser,
+                                                    kCFPreferencesAnyHost);
+    // Convert CFNumberRef to FSEventStreamEventId safely
+    FSEventStreamEventId latestEventId = kFSEventStreamEventIdSinceNow;
+    if (eventIDNum != NULL) {
+        if (!CFNumberGetValue(eventIDNum, kCFNumberSInt64Type, &latestEventId)) {
+            os_log_debug(DiremonLog, "fallback to kFSEventStreamEventIdSinceNow");
+            // Fallback if conversion fails
+            latestEventId = kFSEventStreamEventIdSinceNow;
+        } else {
+            os_log_debug(DiremonLog, "loaded event id: %llu", latestEventId);
+        }
+        CFRelease(eventIDNum);
+    } else {
+        os_log_debug(DiremonLog, "found no event id");
+    }
+    
+    return latestEventId;
+}
+
+// save latest event ID along with volume UUID
+void prefSaveDiremonState(FSEventStreamRef streamRef)
+{
+    os_log_debug(DiremonLog, "saving state");
+    // Grab the UUID of the volume/stream
+    dev_t dev           = FSEventStreamGetDeviceBeingWatched(streamRef);
+    CFUUIDRef      uuid = FSEventsCopyUUIDForDevice(dev);
+    CFStringRef uuidStr = CFUUIDCreateString(NULL, uuid);
+    CFRelease(uuid);
+    // Grab the latest event ID from the stream
+    FSEventStreamEventId latestEventId = FSEventStreamGetLatestEventId(streamRef);
+    
+    // Persist the event ID and stream UUID using CFPreferences
+    CFStringRef appID = CFSTR("com.cpu.diremon");
+    CFNumberRef eventIDNum = CFNumberCreate(NULL, kCFNumberSInt64Type, &latestEventId);
+    CFPreferencesSetValue(CFSTR("LastEventID"),
+                          eventIDNum,
+                          appID,
+                          kCFPreferencesCurrentUser,
+                          kCFPreferencesAnyHost);
+    CFRelease(eventIDNum);
+    
+    os_log_debug(DiremonLog, "saved event id: %llu", latestEventId);
+    
+    CFPreferencesSetValue(CFSTR("LastStreamUUID"),
+                          uuidStr,
+                          appID,
+                          kCFPreferencesCurrentUser,
+                          kCFPreferencesAnyHost);
+    CFPreferencesSynchronize(appID,
+                             kCFPreferencesCurrentUser,
+                             kCFPreferencesAnyHost);
+    CFRelease(uuidStr);
+    
+    os_log_debug(DiremonLog, "saved uuid %@", uuid);
+}
+
 int main(int argc, const char * argv[])
 {
     int exitStatus = EXIT_SUCCESS;
@@ -69,12 +134,13 @@ int main(int argc, const char * argv[])
         CFArrayRef pathsToMonitor = CFArrayCreate(NULL, (const void **)&pathToMonitor, 1, &kCFTypeArrayCallBacks);
         void *callbackInfo = NULL;
         CFAbsoluteTime latency = 3.0; // seconds
+        FSEventStreamEventId latestEventId = prefLoadDiremonState();
         
         FSEventStreamRef fsEventStream = FSEventStreamCreate(NULL,
                                                              &fsEventsCallback,
                                                              callbackInfo,
                                                              pathsToMonitor,
-                                                             kFSEventStreamEventIdSinceNow,
+                                                             latestEventId,
                                                              latency,
                                                              kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagFileEvents \
                                                              | kFSEventStreamCreateFlagUseCFTypes);
@@ -97,6 +163,7 @@ int main(int argc, const char * argv[])
         // Perform a synchronous flush to ensure all pending events are processed
         // before stopping the stream. Note: This call may block the thread.
         FSEventStreamFlushSync(fsEventStream);
+        prefSaveDiremonState(fsEventStream);
         FSEventStreamStop(fsEventStream);
         FSEventStreamInvalidate(fsEventStream);
     cleanup:
