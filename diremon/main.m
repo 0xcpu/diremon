@@ -38,9 +38,8 @@ FSEventStreamEventId prefLoadDiremonState(void)
 {
     os_log_debug(DiremonLog, "loading state");
 
-    CFStringRef appID      = CFSTR("com.cpu.diremon");
     CFNumberRef eventIDNum = CFPreferencesCopyValue(CFSTR("LastEventID"),
-                                                    appID,
+                                                    DiremonAppID,
                                                     kCFPreferencesCurrentUser,
                                                     kCFPreferencesAnyHost);
     // Convert CFNumberRef to FSEventStreamEventId safely
