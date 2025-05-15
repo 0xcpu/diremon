@@ -12,6 +12,7 @@
 
 
 static os_log_t DiremonLog;
+static CFStringRef DiremonAppID = CFSTR("com.cpu.diremon");
 
 
 void fsEventsCallback(ConstFSEventStreamRef streamRef,
@@ -45,6 +46,10 @@ FSEventStreamEventId prefLoadDiremonState(void)
     // Convert CFNumberRef to FSEventStreamEventId safely
     FSEventStreamEventId latestEventId = kFSEventStreamEventIdSinceNow;
     if (eventIDNum != NULL) {
+        // from CFNumberGetValue docs:
+        // "If the argument type differs from the return type, and the conversion is lossy or the return value is out of range,
+        // then this function passes back an approximate value in valuePtr and returns false."
+        // when that happens, we log the fallback and start monitoring from now on.
         if (!CFNumberGetValue(eventIDNum, kCFNumberSInt64Type, &latestEventId)) {
             os_log_debug(DiremonLog, "fallback to kFSEventStreamEventIdSinceNow");
             // Fallback if conversion fails
@@ -70,11 +75,10 @@ void prefSaveDiremonState(FSEventStreamRef streamRef)
     os_log_debug(DiremonLog, "saving latest event id: %llu", latestEventId);
 
     // Persist the event ID and stream UUID using CFPreferences
-    CFStringRef appID = CFSTR("com.cpu.diremon");
     CFNumberRef eventIDNum = CFNumberCreate(NULL, kCFNumberSInt64Type, &latestEventId);
     CFPreferencesSetValue(CFSTR("LastEventID"),
                           eventIDNum,
-                          appID,
+                          DiremonAppID,
                           kCFPreferencesCurrentUser,
                           kCFPreferencesAnyHost);
     CFRelease(eventIDNum);
