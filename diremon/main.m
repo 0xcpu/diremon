@@ -65,14 +65,11 @@ FSEventStreamEventId prefLoadDiremonState(void)
 void prefSaveDiremonState(FSEventStreamRef streamRef)
 {
     os_log_debug(DiremonLog, "saving state");
-    // Grab the UUID of the volume/stream
-    dev_t dev           = FSEventStreamGetDeviceBeingWatched(streamRef);
-    CFUUIDRef      uuid = FSEventsCopyUUIDForDevice(dev);
-    CFStringRef uuidStr = CFUUIDCreateString(NULL, uuid);
-    CFRelease(uuid);
     // Grab the latest event ID from the stream
     FSEventStreamEventId latestEventId = FSEventStreamGetLatestEventId(streamRef);
     
+    os_log_debug(DiremonLog, "saving latest event id: %llu", latestEventId);
+
     // Persist the event ID and stream UUID using CFPreferences
     CFStringRef appID = CFSTR("com.cpu.diremon");
     CFNumberRef eventIDNum = CFNumberCreate(NULL, kCFNumberSInt64Type, &latestEventId);
@@ -83,19 +80,7 @@ void prefSaveDiremonState(FSEventStreamRef streamRef)
                           kCFPreferencesAnyHost);
     CFRelease(eventIDNum);
     
-    os_log_debug(DiremonLog, "saved event id: %llu", latestEventId);
-    
-    CFPreferencesSetValue(CFSTR("LastStreamUUID"),
-                          uuidStr,
-                          appID,
-                          kCFPreferencesCurrentUser,
-                          kCFPreferencesAnyHost);
-    CFPreferencesSynchronize(appID,
-                             kCFPreferencesCurrentUser,
-                             kCFPreferencesAnyHost);
-    CFRelease(uuidStr);
-    
-    os_log_debug(DiremonLog, "saved uuid %@", uuid);
+    os_log_debug(DiremonLog, "saved state");
 }
 
 int main(int argc, const char * argv[])
