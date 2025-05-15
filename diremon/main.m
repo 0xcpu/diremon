@@ -12,6 +12,7 @@
 
 
 static os_log_t DiremonLog;
+static CFStringRef DiremonAppID = CFSTR("com.cpu.diremon");
 
 
 void fsEventsCallback(ConstFSEventStreamRef streamRef,
@@ -31,6 +32,58 @@ void fsEventsCallback(ConstFSEventStreamRef streamRef,
     }
     
     os_log_debug(DiremonLog, "end processing new event");
+}
+
+// load latest event ID that was process or fallback to kFSEventStreamEventIdSinceNow
+FSEventStreamEventId prefLoadDiremonState(void)
+{
+    os_log_debug(DiremonLog, "loading state");
+
+    CFNumberRef eventIDNum = CFPreferencesCopyValue(CFSTR("LastEventID"),
+                                                    DiremonAppID,
+                                                    kCFPreferencesCurrentUser,
+                                                    kCFPreferencesAnyHost);
+    // Convert CFNumberRef to FSEventStreamEventId safely
+    FSEventStreamEventId latestEventId = kFSEventStreamEventIdSinceNow;
+    if (eventIDNum != NULL) {
+        // from CFNumberGetValue docs:
+        // "If the argument type differs from the return type, and the conversion is lossy or the return value is out of range,
+        // then this function passes back an approximate value in valuePtr and returns false."
+        // when that happens, we log the fallback and start monitoring from now on.
+        if (!CFNumberGetValue(eventIDNum, kCFNumberSInt64Type, &latestEventId)) {
+            os_log_debug(DiremonLog, "fallback to kFSEventStreamEventIdSinceNow");
+            // Fallback if conversion fails
+            latestEventId = kFSEventStreamEventIdSinceNow;
+        } else {
+            os_log_debug(DiremonLog, "loaded event id: %llu", latestEventId);
+        }
+        CFRelease(eventIDNum);
+    } else {
+        os_log_debug(DiremonLog, "found no event id");
+    }
+    
+    return latestEventId;
+}
+
+// save latest event ID along with volume UUID
+void prefSaveDiremonState(FSEventStreamRef streamRef)
+{
+    os_log_debug(DiremonLog, "saving state");
+    // Grab the latest event ID from the stream
+    FSEventStreamEventId latestEventId = FSEventStreamGetLatestEventId(streamRef);
+    
+    os_log_debug(DiremonLog, "saving latest event id: %llu", latestEventId);
+
+    // Persist the event ID and stream UUID using CFPreferences
+    CFNumberRef eventIDNum = CFNumberCreate(NULL, kCFNumberSInt64Type, &latestEventId);
+    CFPreferencesSetValue(CFSTR("LastEventID"),
+                          eventIDNum,
+                          DiremonAppID,
+                          kCFPreferencesCurrentUser,
+                          kCFPreferencesAnyHost);
+    CFRelease(eventIDNum);
+    
+    os_log_debug(DiremonLog, "saved state");
 }
 
 int main(int argc, const char * argv[])
@@ -69,12 +122,13 @@ int main(int argc, const char * argv[])
         CFArrayRef pathsToMonitor = CFArrayCreate(NULL, (const void **)&pathToMonitor, 1, &kCFTypeArrayCallBacks);
         void *callbackInfo = NULL;
         CFAbsoluteTime latency = 3.0; // seconds
+        FSEventStreamEventId latestEventId = prefLoadDiremonState();
         
         FSEventStreamRef fsEventStream = FSEventStreamCreate(NULL,
                                                              &fsEventsCallback,
                                                              callbackInfo,
                                                              pathsToMonitor,
-                                                             kFSEventStreamEventIdSinceNow,
+                                                             latestEventId,
                                                              latency,
                                                              kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagFileEvents \
                                                              | kFSEventStreamCreateFlagUseCFTypes);
@@ -97,6 +151,7 @@ int main(int argc, const char * argv[])
         // Perform a synchronous flush to ensure all pending events are processed
         // before stopping the stream. Note: This call may block the thread.
         FSEventStreamFlushSync(fsEventStream);
+        prefSaveDiremonState(fsEventStream);
         FSEventStreamStop(fsEventStream);
         FSEventStreamInvalidate(fsEventStream);
     cleanup:
