@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 
 
-void LogSinkInit(void (*logSendFunc)(const uint8_t *));
-void LogSinkSendEvent(FSEventStreamEventId eventId,
+void LogSinkInit(bool (*logSendFunc)(NSData *));
+bool LogSinkSendEvent(FSEventStreamEventId eventId,
                       FSEventStreamEventFlags flags,
                       CFStringRef path);

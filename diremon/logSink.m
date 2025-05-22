@@ -7,14 +7,14 @@
 
 #import "logSink.h"
 
-static void (*logSend)(const uint8_t *) = NULL;
+static bool (*logSend)(NSData *) = NULL;
 
-void LogSinkInit(void (*logSendFunc)(const uint8_t *))
+void LogSinkInit(bool (*logSendFunc)(NSData *))
 {
     logSend = logSendFunc;
 }
 
-void LogSinkSendEvent(FSEventStreamEventId eventId,
+bool LogSinkSendEvent(FSEventStreamEventId eventId,
                       FSEventStreamEventFlags flags,
                       CFStringRef path)
 {
@@ -32,31 +32,33 @@ void LogSinkSendEvent(FSEventStreamEventId eventId,
         CFRelease(eventIdNum);
         CFRelease(eventFlags);
 
-        return;
+        return false;
     }
     
     NSError *jsonError = nil;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:(__bridge id _Nonnull)(eventDict) options:NSJSONWritingPrettyPrinted error:&jsonError];
+    NSData *jsonData = [NSJSONSerialization
+                        dataWithJSONObject:(__bridge id _Nonnull)(eventDict)
+                        options:NSJSONWritingWithoutEscapingSlashes
+                        error:&jsonError];
     if (jsonData == nil) {
         CFRelease(eventIdNum);
         CFRelease(eventFlags);
         CFRelease(eventDict);
-        
-        return;
+
+        return false;
     }
     
+    bool retStatus = false;
     if (logSend) {
-        const uint8_t *bytes = [jsonData bytes];
-        NSUInteger len   = [jsonData length];
-        uint8_t *utf8  = malloc(len + 1);
-        memcpy(utf8, bytes, len);
-        utf8[len] = '\0';
+        NSMutableData *logData = [jsonData mutableCopy];
+        [logData appendData:[@"\n" dataUsingEncoding:NSASCIIStringEncoding]];
 
-        logSend(utf8);
-        free(utf8);
+        retStatus = logSend(logData);
     }
 
     CFRelease(eventIdNum);
     CFRelease(eventFlags);
     CFRelease(eventDict);
+
+    return retStatus;
 }

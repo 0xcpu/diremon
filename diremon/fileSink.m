@@ -9,14 +9,24 @@
 #import "stdio.h"
 #import "logSink.h"
 
-static FILE *logFile = NULL;
+static NSString *FilePath = @"/var/log/diremon/events.log";
 
-static void fileSend(const uint8_t *msg) {
-    if (!logFile) logFile = fopen("/var/log/diremon/events.log", "a");
-    if (logFile) {
-        fprintf(logFile, "%s\n", msg);
-        fflush(logFile);
+static bool fileSend(NSData *msg) {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if (![fileManager fileExistsAtPath:FilePath]) {
+        [fileManager createFileAtPath:FilePath contents:nil attributes:nil];
     }
+
+    NSFileHandle *fileHandle = [NSFileHandle fileHandleForUpdatingAtPath:FilePath];
+    if (fileHandle) {
+        [fileHandle seekToEndOfFile];
+        [fileHandle writeData:msg];
+        [fileHandle closeFile];
+
+        return true;
+    }
+
+    return false;
 }
 
 void FileSinkInit(void) {
