@@ -10,6 +10,9 @@
 #import <os/log.h>
 #import <signal.h>
 
+#import "logSink.h"
+#import "fileSink.h"
+
 
 static os_log_t DiremonLog;
 static CFStringRef DiremonAppID = CFSTR("com.cpu.diremon");
@@ -29,6 +32,7 @@ void fsEventsCallback(ConstFSEventStreamRef streamRef,
     for (size_t i = 0; i < numEvents; i++) {
         CFStringRef path = CFArrayGetValueAtIndex(cfEventPaths, i);
         os_log_info(DiremonLog, "path: %{public}@", path);
+        LogSinkSendEvent(eventIds[i], eventFlags[i], path);
     }
     
     os_log_debug(DiremonLog, "end processing new event");
@@ -144,6 +148,7 @@ int main(int argc, const char * argv[])
             goto cleanup;
         }
         
+        FileSinkInit();
         os_log_info(DiremonLog, "entering run loop");
         CFRunLoopRun();
         os_log_info(DiremonLog, "exited run loop, cleanup\n");
