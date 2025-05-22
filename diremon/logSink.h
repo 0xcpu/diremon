@@ -1,5 +1,5 @@
 //
-//  log_sink.h
+//  logSink.h
 //  diremon
 //
 //  Created by cpu on 17.05.2025.

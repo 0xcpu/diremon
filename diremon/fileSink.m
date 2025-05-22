@@ -5,8 +5,6 @@
 //  Created by cpu on 21.05.2025.
 //
 
-// FileSink.c
-#import "stdio.h"
 #import "logSink.h"
 
 static NSString *FilePath = @"/var/log/diremon/events.log";
