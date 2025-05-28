@@ -32,6 +32,8 @@ bool LogSinkSendEvent(FSEventStreamEventId eventId,
         CFRelease(eventIdNum);
         CFRelease(eventFlags);
 
+        os_log_error(DiremonLog, "failed to create event dictionary");
+
         return false;
     }
     
@@ -44,6 +46,8 @@ bool LogSinkSendEvent(FSEventStreamEventId eventId,
         CFRelease(eventIdNum);
         CFRelease(eventFlags);
         CFRelease(eventDict);
+
+        os_log_error(DiremonLog, "failed to JSON serialize the data");
 
         return false;
     }
@@ -59,6 +63,8 @@ bool LogSinkSendEvent(FSEventStreamEventId eventId,
     CFRelease(eventIdNum);
     CFRelease(eventFlags);
     CFRelease(eventDict);
+
+    os_log_debug(DiremonLog, "completed send event with status: %@", retStatus ? @"success" : @"failure");
 
     return retStatus;
 }
