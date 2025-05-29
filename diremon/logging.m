@@ -7,6 +7,7 @@
 
 #import "logging.h"
 
+os_log_t DiremonLog;
 
 void LoggingInit(void)
 {

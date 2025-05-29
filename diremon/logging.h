@@ -8,7 +8,7 @@
 #import <os/log.h>
 
 
-static os_log_t DiremonLog;
+extern os_log_t DiremonLog;
 
 
 void LoggingInit(void);
