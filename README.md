@@ -6,7 +6,7 @@ It's intended to be used for monitoring of canary tokens, sensitive files, or di
 ## Log sinks
 
 Currently, Diremon supports the following log sinks:
-- **file**: Logs events to `/var/log/diremon/events.log` in JSON format.
+- `file`: Logs events to `/var/log/diremon/events.log` in JSON format.
 
 ## Requirements
 
