@@ -7,14 +7,13 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreServices/CoreServices.h>
-#import <os/log.h>
 #import <signal.h>
 
+#import "logging.h"
 #import "logSink.h"
 #import "fileSink.h"
 
 
-static os_log_t DiremonLog;
 static CFStringRef DiremonAppID = CFSTR("com.cpu.diremon");
 
 
@@ -94,7 +93,7 @@ int main(int argc, const char * argv[])
 {
     int exitStatus = EXIT_SUCCESS;
 
-    DiremonLog = os_log_create("com.cpu.diremon", "monitor");
+    LoggingInit();
     @autoreleasepool {
         if (argc != 2) {
             os_log_error(DiremonLog, "%{public}s <path to monitor>", argv[0]);

@@ -12,6 +12,8 @@ static NSString *FilePath = @"/var/log/diremon/events.log";
 static bool fileSend(NSData *msg) {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if (![fileManager fileExistsAtPath:FilePath]) {
+        os_log_debug(DiremonLog, "creating new %@", FilePath);
+
         [fileManager createFileAtPath:FilePath contents:nil attributes:nil];
     }
 
@@ -24,6 +26,7 @@ static bool fileSend(NSData *msg) {
         return true;
     }
 
+    os_log_error(DiremonLog, "no file handle");
     return false;
 }
 

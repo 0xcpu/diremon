@@ -8,6 +8,8 @@
 #import <CoreServices/CoreServices.h>
 #import <Foundation/Foundation.h>
 
+#import "logging.h"
+
 
 void LogSinkInit(bool (*logSendFunc)(NSData *));
 bool LogSinkSendEvent(FSEventStreamEventId eventId,
