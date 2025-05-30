@@ -1,6 +1,12 @@
 # Diremon
 
-Diremon is a lightweight macOS command-line tool that watches a directory via FSEvents and logs activity using os_log.
+Diremon is a lightweight _macOS_ command-line tool that watches a directory via FSEvents and logs activity to _log sinks_.
+It's intended to be used for monitoring of canary tokens, sensitive files, or directories that should not be modified on _macOS_ systems (especially where the EDR doesn't monitor file system operations).
+
+## Log sinks
+
+Currently, Diremon supports the following log sinks:
+- `file`: Logs events to `/var/log/diremon/events.log` in JSON format.
 
 ## Requirements
 
@@ -12,9 +18,17 @@ Diremon is a lightweight macOS command-line tool that watches a directory via FS
 1. Clone the repository
 2. Open `diremon.xcodeproj` in Xcode
 3. Build and run the project
+
+## Usage
+
+To use Diremon, you need to specify the path to the directory you want to monitor. The command is as follows:
 ```
-diremon <path to monitor>
+sudo diremon <path to monitor>
 ```
+
+### Debugging
+
+`Debug` and `Info` log level events are logged to the console. Use `com.cpu.diremon` as the subsystem to filter logs in Console.app.
 
 ## License
 
