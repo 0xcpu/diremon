@@ -27,9 +27,9 @@ jobs:
           scheme: ${{ 'default' }}
         run: |
           if [ $scheme = default ]; then scheme=$(cat default); fi
-          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
+          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.[...]"
           file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
           xcodebuild clean build analyze \
           -scheme "$scheme" \
           -"$filetype_parameter" "$file_to_build" \
-          -destination 'platform=macOS,name=Any Mac' | xcpretty && exit ${PIPESTATUS[0]}
+          -destination 'platform=macOS,arch=arm64,name=My Mac' | xcpretty && exit ${PIPESTATUS[0]}
