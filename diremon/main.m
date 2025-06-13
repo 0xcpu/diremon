@@ -12,6 +12,7 @@
 #import "logging.h"
 #import "logSink.h"
 #import "fileSink.h"
+#import "httpSink.h"
 
 
 static CFStringRef DiremonAppID = CFSTR("com.cpu.diremon");
@@ -148,6 +149,7 @@ int main(int argc, const char * argv[])
         }
         
         FileSinkInit();
+        HttpSinkInit();
         os_log_info(DiremonLog, "entering run loop");
         CFRunLoopRun();
         os_log_info(DiremonLog, "exited run loop, cleanup\n");
