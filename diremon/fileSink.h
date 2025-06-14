@@ -8,3 +8,4 @@
 #import "logging.h"
 
 void FileSinkInit(void);
+void FileSinkCleanup(void);
