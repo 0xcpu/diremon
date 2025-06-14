@@ -160,6 +160,7 @@ int main(int argc, const char * argv[])
         prefSaveDiremonState(fsEventStream);
         FSEventStreamStop(fsEventStream);
         FSEventStreamInvalidate(fsEventStream);
+        FileSinkCleanup();
     cleanup:
         FSEventStreamRelease(fsEventStream);
         CFRelease(pathsToMonitor);
