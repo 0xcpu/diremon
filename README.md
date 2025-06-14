@@ -1,3 +1,5 @@
+[![Xcode - Build and Analyze](https://github.com/0xcpu/diremon/actions/workflows/objective-c-xcode.yml/badge.svg)](https://github.com/0xcpu/diremon/actions/workflows/objective-c-xcode.yml)
+
 # Diremon
 
 Diremon is a lightweight _macOS_ command-line tool that watches a directory via FSEvents and logs activity to _log sinks_.
